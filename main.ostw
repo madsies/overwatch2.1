@@ -1,3 +1,10 @@
+
+/*
+==================================================================================================================
+General
+==================================================================================================================
+*/
+
 playervar define slowTimer = 0;
 playervar define healee = null;
 playervar tracerCooldowns tc;
@@ -7,6 +14,13 @@ Event.OngoingPlayer
 {
     SetAllowedHeroes(EventPlayer(), [Hero.Moira, Hero.Reinhardt, Hero.Sombra, Hero.Mercy, Hero.Pharah, Hero.Tracer]);
 }
+
+
+/*
+==================================================================================================================
+Rein
+==================================================================================================================
+*/
 
 
 rule: "reinPassives"
@@ -44,6 +58,12 @@ if (EventAbility() == Button.Ability1)
 {
     SetAbilityCooldown(EventPlayer(), Button.Ability1, 0.25);
 }
+
+/*
+==================================================================================================================
+Moira
+==================================================================================================================
+*/
 
 
 rule: "moiraPassives"
@@ -116,6 +136,12 @@ if(EventAbility() == Button.SecondaryFire)
     Heal(Victim(), null, EventDamage());
     Damage(Victim(), EventPlayer(), 20 - (AbilityResource(EventPlayer(), Button.PrimaryFire)/8));
 }
+
+/*
+==================================================================================================================
+Sombra
+==================================================================================================================
+*/
 
 rule: "sombraPassives"
 Event.OngoingPlayer
@@ -203,6 +229,12 @@ if (EventPlayer().stacks > 0)
     EventPlayer().stacks = 0;
 }
 
+/*
+==================================================================================================================
+Mercy
+==================================================================================================================
+*/
+
 rule: "mercyPassives"
 Event.OngoingPlayer
 if (HeroOf(EventPlayer()) == Hero.Mercy)
@@ -241,6 +273,12 @@ if (HeroOf(EventPlayer()) == Hero.Mercy)
 
     SetDamageReceived(EventPlayer().healee, 100);
 }
+
+/*
+==================================================================================================================
+Pharah
+==================================================================================================================
+*/
 
 
 rule: "pharahPassives"
@@ -319,6 +357,13 @@ if (IsUsingUltimate(EventPlayer()))
     RemoveAllHealthPoolsFromPlayer(EventPlayer());
 }
 
+/*
+==================================================================================================================
+Tracer
+==================================================================================================================
+*/
+
+
 
 rule: "tracerPassives"
 Event.OngoingPlayer
@@ -391,6 +436,7 @@ if (EventPlayer().tc.getRecallCD()+0.3 > TotalTimeElapsed())
     SetDamageDealt(EventPlayer(), 100);
 }
 
+// Check if work on multiple, unsure.
 rule: "pulseBomb"
 Event.OnFinalBlow
 if (HeroOf(EventPlayer()) == Hero.Tracer)
@@ -398,8 +444,6 @@ if (EventAbility() == Button.Ultimate)
 {
     SetUltimateCharge(EventPlayer(), UltimateChargePercent(Attacker())+25);
 }
-
-
 
 
 class tracerCooldowns
@@ -421,6 +465,12 @@ class tracerCooldowns
 
 
 }
+
+/*
+==================================================================================================================
+Next Hero
+==================================================================================================================
+*/
 
 
 
