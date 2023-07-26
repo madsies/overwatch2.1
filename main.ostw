@@ -1,0 +1,426 @@
+playervar define slowTimer = 0;
+playervar define healee = null;
+playervar tracerCooldowns tc;
+
+rule: "bans"
+Event.OngoingPlayer
+{
+    SetAllowedHeroes(EventPlayer(), [Hero.Moira, Hero.Reinhardt, Hero.Sombra, Hero.Mercy, Hero.Pharah, Hero.Tracer]);
+}
+
+
+rule: "reinPassives"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Reinhardt)
+if (IsHeroBeingPlayed(Hero.Reinhardt, EventPlayer().Team()))
+{
+    SetMaxHealth(EventPlayer(), 100);
+    Wait(0.1);
+    SetMaxHealth(EventPlayer(), 100*(699/MaxHealth(EventPlayer())));
+    StartScalingPlayer(EventPlayer(), 1, false);
+    SetAbility1Enabled(EventPlayer(), true);
+}
+
+rule: "reinActives"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Reinhardt)
+if (IsButtonHeld(EventPlayer(), Button.SecondaryFire))
+{
+    SetMoveSpeed(EventPlayer(), 140);
+    Damage(EventPlayer(), EventPlayer(), 1);
+    StartDamageOverTime(EventPlayer(), EventPlayer(), 0.30, 15);
+    Wait(0.25);
+    
+    LoopIf(IsButtonHeld(EventPlayer(), Button.SecondaryFire));
+    
+    SetMoveSpeed(EventPlayer(), 100);
+
+}
+
+rule: "reinChargeReset"
+Event.OnElimination
+if (HeroOf(EventPlayer()) == Hero.Reinhardt)
+if (EventAbility() == Button.Ability1)
+{
+    SetAbilityCooldown(EventPlayer(), Button.Ability1, 0.25);
+}
+
+
+rule: "moiraPassives"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Moira)
+{
+    SetMaxHealth(EventPlayer(), 100);
+    Wait(0.1);
+    SetMaxHealth(EventPlayer(), 100*(150/MaxHealth(EventPlayer())));
+    StartScalingPlayer(EventPlayer(), 1, false);
+    SetAbility1Enabled(EventPlayer(), true);
+}
+
+rule: "moiraFadeCooldown"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Moira)
+if (EventPlayer().IsUsingAbility1())
+{
+    SetGravity(EventPlayer(), 50);
+    SetMoveSpeed(EventPlayer(), 200);
+    slowTimer = 0;
+    Wait(0.95);
+    
+    SetAbilityCooldown(EventPlayer(), Button.Ability1, 9);
+
+    WaitUntil(EventPlayer().IsOnGround(), 10);
+
+    SetGravity(EventPlayer(), 100);
+    SetMoveSpeed(EventPlayer(), 100);
+}
+
+rule: "moiraOrb"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Moira)
+if(EventAbility() == Button.Ability2)
+{
+    Heal(Victim(), null, EventDamage()); // Heal to nullify damage, then can add custom
+    
+    Victim().slowTimer = 0.5;
+}
+
+rule: "slowOrbTimer"
+Event.OngoingPlayer
+if (EventPlayer().slowTimer > 0)
+{
+    SetMoveSpeed(EventPlayer(), 0);
+    Wait(0.1);
+    slowTimer -= 0.1;
+    LoopIf(slowTimer > 0.1);
+    SetMoveSpeed(EventPlayer(), 100);
+    slowTimer = 0;
+
+}
+
+
+rule: "moiraScratch"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Moira)
+if(EventAbility() == Button.Melee)
+{
+    StartDamageOverTime(Victim(), EventPlayer(), 2, 15);
+    SetAbilityResource(EventPlayer(), Button.PrimaryFire, AbilityResource(EventPlayer(), Button.PrimaryFire)+5);
+}
+
+rule: "moiraPrimary"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Moira)
+if(EventAbility() == Button.SecondaryFire)
+{
+    Heal(Victim(), null, EventDamage());
+    Damage(Victim(), EventPlayer(), 20 - (AbilityResource(EventPlayer(), Button.PrimaryFire)/8));
+}
+
+rule: "sombraPassives"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Sombra)
+{
+    SetMaxHealth(EventPlayer(), 100);
+    Wait(0.1);
+    SetMaxHealth(EventPlayer(), 100*(50/MaxHealth(EventPlayer())));
+    StartScalingPlayer(EventPlayer(), 0.5, false);
+    SetAbility1Enabled(EventPlayer(), true);
+}
+
+rule: "sombraSneak"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Sombra)
+if (EventAbility() == Button.Melee)
+if (Victim().FacingDirection().X >= EventPlayer().FacingDirection().X - 0.6)
+if (Victim().FacingDirection().X <= EventPlayer().FacingDirection().X + 0.6)
+if (Victim().FacingDirection().Z >= EventPlayer().FacingDirection().Z - 0.6)
+if (Victim().FacingDirection().Z <= EventPlayer().FacingDirection().Z + 0.6)
+{
+    Damage(Victim(), EventPlayer(), 4444);
+    PlayEffect(AllPlayers(Team.Team1), PlayEffect.GoodExplosion, Color.Rose, Victim().Position(), 3);
+    PlayEffect(AllPlayers(Team.Team2), PlayEffect.GoodExplosion, Color.Rose, Victim().Position(), 3);
+}
+
+rule: "sombraInvis"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Sombra)
+if (EventPlayer().IsUsingAbility1()){
+    SetDamageReceived(EventPlayer(), 1);
+    SetMoveSpeed(EventPlayer(), 200);
+
+    Wait(0.2);
+    LoopIf(EventPlayer().IsUsingAbility1());
+    SetDamageReceived(EventPlayer(), 100);
+    SetMoveSpeed(EventPlayer(), 100);
+}
+
+
+rule: "primaryFireSombra"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Sombra)
+if (EventAbility() == Button.PrimaryFire)
+if (Victim().Health().Round() / Victim().MaxHealth() > 0.25)
+if (!HasStatus(Victim(), Status.Hacked))
+{
+    Heal(Victim(), null, EventDamage());
+    Damage(Victim(), EventPlayer(), 2);
+}
+
+rule: "executeSombra"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Sombra)
+if (EventAbility() == Button.PrimaryFire)
+if (Victim().Health().Round() / Victim().MaxHealth() <= 0.25)
+if (!HasStatus(Victim(), Status.Hacked))
+{
+    Damage(Victim(), EventPlayer(), 4444);
+    //PlayEffect(AllPlayers(Team.Team1), PlayEffect.SombraEmpExplosioneffect, Color.Red, Victim().Position(), 3);
+    //PlayEffect(AllPlayers(Team.Team2), PlayEffect.SombraEmpExplosioneffect, Color.Red, Victim().Position(), 3);
+}
+
+playervar define stacks = 0;
+globalvar define stacker = null;
+
+rule: "primaryFireSombra"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Sombra)
+if (EventAbility() == Button.PrimaryFire)
+if (HasStatus(Victim(), Status.Hacked))
+{
+    Victim().stacks++;
+    stacker = EventPlayer();
+    Heal(Victim(), null, EventDamage());
+    Damage(Victim(), EventPlayer(), 2);
+}
+
+rule: "slowOrbTimer"
+Event.OngoingPlayer
+if (EventPlayer().stacks > 0)
+{
+    WaitUntil(!HasStatus(EventPlayer(), Status.Hacked), 20);
+    Damage(EventPlayer(), stacker, EventPlayer().stacks*2); 
+    EventPlayer().stacks = 0;
+}
+
+rule: "mercyPassives"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Mercy)
+{
+    SetMaxHealth(EventPlayer(), 100);
+    Wait(0.1);
+    SetMaxHealth(EventPlayer(), 100*(100/MaxHealth(EventPlayer())));
+    SetAbility1Enabled(EventPlayer(), true);
+}
+
+rule: "setupHealee"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Mercy)
+{
+    EventPlayer().healee = null;
+}
+
+rule: "setupHealee2"
+Event.OnHealingTaken
+{
+    Healer().healee = EventPlayer();
+}
+
+rule: "damageBoost"
+Event.OngoingPlayer
+if (IsFiringSecondary(EventPlayer()))
+if (HeroOf(EventPlayer()) == Hero.Mercy)
+{
+    StartHoldingButton(EventPlayer(), Button.PrimaryFire);
+    WaitUntil(EventPlayer().healee, 9999);
+    StopHoldingButton(EventPlayer(), Button.PrimaryFire);
+    SetDamageReceived(EventPlayer().healee, 70);
+    SetDamageDealt(EventPlayer().healee, 100);
+    Wait(0.2);
+    LoopIf(IsFiringSecondary(EventPlayer()));
+
+    SetDamageReceived(EventPlayer().healee, 100);
+}
+
+
+rule: "pharahPassives"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Pharah)
+{
+    SetMaxHealth(EventPlayer(), 100);
+    Wait(0.1);
+    SetMaxHealth(EventPlayer(), 100*(249/MaxHealth(EventPlayer())));
+    StartScalingPlayer(EventPlayer(), 1.0, false);
+    SetMoveSpeed(EventPlayer(), 170);
+    SetGravity(EventPlayer(), 150);
+    SetAbility1Enabled(EventPlayer(), false);
+    SetMaxAmmo(EventPlayer(), 0, 12);
+}
+
+rule: "grounded"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Pharah)
+if (EventPlayer().IsInAir())
+{
+    Wait(1);
+    grounded();
+    SetMoveSpeed(EventPlayer(), 170);
+    SetGravity(EventPlayer(), 150); 
+}
+
+void grounded() "grounded"
+{
+    SetMoveSpeed(EventPlayer(), 120);
+    SetGravity(EventPlayer(), 200);
+    Wait(0.2);
+    LoopIf(EventPlayer().IsInAir());
+}
+
+
+rule: "pharahBoop"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Pharah)
+if (EventPlayer().IsUsingAbility2())
+{
+    SetKnockbackReceived(EventPlayer(), 250);
+    Wait(0.5);
+    SetKnockbackReceived(EventPlayer(), 100);
+}
+
+rule: "pharahBoop"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Pharah)
+if (IsJumping(EventPlayer()))
+{
+    Wait(0.2);
+    StopHoldingButton(EventPlayer(), Button.Jump);
+}
+
+rule: "stopSuicide"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Pharah)
+if (EventPlayer() == Victim())
+{
+    Heal(EventPlayer(), null, EventDamage());
+    SetKnockbackReceived(EventPlayer(), 200);
+    Wait(0.2);
+    SetKnockbackReceived(EventPlayer(), 100);
+}
+
+rule: "pharahUlt"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Pharah)
+if (IsUsingUltimate(EventPlayer()))
+{
+    AddHealthPoolToPlayer(EventPlayer(), HealthType.Armor, 200, true, false);
+
+    Wait(2.5);
+
+    RemoveAllHealthPoolsFromPlayer(EventPlayer());
+}
+
+
+rule: "tracerPassives"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Tracer)
+{
+    SetMaxHealth(EventPlayer(), 100);
+    Wait(0.1);
+    SetMaxHealth(EventPlayer(), 100*(125/MaxHealth(EventPlayer())));
+    AddHealthPoolToPlayer(EventPlayer(), HealthType.Shields, 25, true, false);
+    StartScalingPlayer(EventPlayer(), 1.0, false);
+    SetMoveSpeed(EventPlayer(), 100);
+    SetGravity(EventPlayer(), 100);
+    SetAbility1Enabled(EventPlayer(), true);
+    SetMaxAmmo(EventPlayer(), 0, 40);
+}
+
+
+rule: "blinkMelee"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Tracer)
+if (EventPlayer().IsButtonHeld(Button.Ability1))
+{
+    EventPlayer().tc.blinkMeleeCD = TotalTimeElapsed();
+}
+
+rule: "blinkMeleee"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Tracer)
+if (EventPlayer().IsButtonHeld(Button.SecondaryFire))
+{
+    EventPlayer().tc.blinkMeleeCD = TotalTimeElapsed();
+}
+
+rule: "blinkMelee2"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Tracer)
+if (EventAbility() == Button.Melee)
+if (EventPlayer().tc.getCD()+0.4 > TotalTimeElapsed())
+{
+    SetAmmo(EventPlayer(), 0, Ammo(EventPlayer())+10);
+    MaxAmmo(EventPlayer(), 40);
+    SetAbilityCooldown(EventPlayer(), Button.Ability2, EventPlayer().tc.getRecallCD()-2);
+} 
+
+rule: "recall"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Tracer)
+if (EventPlayer().IsButtonHeld(Button.Ability2))
+{
+    EventPlayer().tc.recallCD = TotalTimeElapsed();
+}
+
+rule: "meleeBlink"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Tracer)
+if (EventAbility() == Button.Melee)
+{
+    EventPlayer().tc.meleeBlinkCD = TotalTimeElapsed();
+}
+
+rule: "recallMelee"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Tracer)
+if (EventPlayer().IsButtonHeld(Button.Ability2))
+if (EventPlayer().tc.getRecallCD()+0.3 > TotalTimeElapsed())
+{
+    SetAbilityCharge(EventPlayer(), Button.Ability1, AbilityCharge(EventPlayer(), Button.Ability1)+1);
+    SetDamageDealt(EventPlayer(), 125);
+    Wait(5);
+    SetDamageDealt(EventPlayer(), 100);
+}
+
+rule: "pulseBomb"
+Event.OnFinalBlow
+if (HeroOf(EventPlayer()) == Hero.Tracer)
+if (EventAbility() == Button.Ultimate)
+{
+    SetUltimateCharge(EventPlayer(), UltimateChargePercent(Attacker())+25);
+}
+
+
+
+
+class tracerCooldowns
+{
+    public Number blinkMeleeCD = 0;
+    public Number recallCD;
+    public Number meleeBlinkCD = 0;
+    public Number getCD(){
+        return blinkMeleeCD;
+    }
+
+    public Number getRecallCD(){
+        return 12 - (TotalTimeElapsed() - recallCD);
+    }
+
+    public Number getCD2(){
+        return meleeBlinkCD;
+    }
+
+
+}
+
+
+
