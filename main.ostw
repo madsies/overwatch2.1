@@ -12,7 +12,7 @@ playervar tracerCooldowns tc;
 rule: "bans"
 Event.OngoingPlayer
 {
-    SetAllowedHeroes(EventPlayer(), [Hero.Moira, Hero.Reinhardt, Hero.Sombra, Hero.Pharah, Hero.Tracer, winton, Hero.Widowmaker]);
+    SetAllowedHeroes(EventPlayer(), [Hero.Moira, Hero.Reinhardt, Hero.Sombra, Hero.Pharah, Hero.Tracer, winton, Hero.Widowmaker, Hero.Ana]);
 }
 
 
@@ -30,10 +30,12 @@ if (HeroOf(EventPlayer()) == Hero.Reinhardt)
 if (IsHeroBeingPlayed(Hero.Reinhardt, EventPlayer().Team()))
 {
     SetMaxHealth(EventPlayer(), 100);
+    RemoveAllHealthPoolsFromPlayer(EventPlayer());
     Wait(0.1);
     SetMaxHealth(EventPlayer(), 100*(699/MaxHealth(EventPlayer())));
     StartScalingPlayer(EventPlayer(), 1, false);
     SetAbility1Enabled(EventPlayer(), true);
+    SetAbility2Enabled(EventPlayer(), true);
 }
 
 rule: "reinActives"
@@ -72,6 +74,7 @@ Event.OngoingPlayer
 if (HeroOf(EventPlayer()) == Hero.Moira)
 {
     SetMaxHealth(EventPlayer(), 100);
+    RemoveAllHealthPoolsFromPlayer(EventPlayer());
     Wait(0.1);
     SetMaxHealth(EventPlayer(), 100*(150/MaxHealth(EventPlayer())));
     StartScalingPlayer(EventPlayer(), 1, false);
@@ -149,10 +152,13 @@ Event.OngoingPlayer
 if (HeroOf(EventPlayer()) == Hero.Sombra)
 {
     SetMaxHealth(EventPlayer(), 100);
+    RemoveAllHealthPoolsFromPlayer(EventPlayer());
     Wait(0.1);
-    SetMaxHealth(EventPlayer(), 100*(50/MaxHealth(EventPlayer())));
+    SetMaxHealth(EventPlayer(), 100*(25/MaxHealth(EventPlayer())));
+    AddHealthPoolToPlayer(EventPlayer(), HealthType.Shields, 50, true, true);
     StartScalingPlayer(EventPlayer(), 0.5, false);
     SetAbility1Enabled(EventPlayer(), true);
+    SetAbility2Enabled(EventPlayer(), true);
 }
 
 rule: "sombraSneak"
@@ -241,9 +247,11 @@ Event.OngoingPlayer
 if (HeroOf(EventPlayer()) == Hero.Mercy)
 {
     SetMaxHealth(EventPlayer(), 100);
+    RemoveAllHealthPoolsFromPlayer(EventPlayer());
     Wait(0.1);
     SetMaxHealth(EventPlayer(), 100*(100/MaxHealth(EventPlayer())));
     SetAbility1Enabled(EventPlayer(), true);
+    SetAbility2Enabled(EventPlayer(), true);
 }
 
 rule: "setupHealee"
@@ -287,12 +295,14 @@ Event.OngoingPlayer
 if (HeroOf(EventPlayer()) == Hero.Pharah)
 {
     SetMaxHealth(EventPlayer(), 100);
+    RemoveAllHealthPoolsFromPlayer(EventPlayer());
     Wait(0.1);
     SetMaxHealth(EventPlayer(), 100*(249/MaxHealth(EventPlayer())));
     StartScalingPlayer(EventPlayer(), 1.0, false);
     SetMoveSpeed(EventPlayer(), 170);
     SetGravity(EventPlayer(), 150);
     SetAbility1Enabled(EventPlayer(), false);
+    SetAbility2Enabled(EventPlayer(), true);
     SetMaxAmmo(EventPlayer(), 0, 12);
 }
 
@@ -371,6 +381,7 @@ Event.OngoingPlayer
 if (HeroOf(EventPlayer()) == Hero.Tracer)
 {
     SetMaxHealth(EventPlayer(), 100);
+    RemoveAllHealthPoolsFromPlayer(EventPlayer());
     Wait(0.1);
     SetMaxHealth(EventPlayer(), 100*(125/MaxHealth(EventPlayer())));
     AddHealthPoolToPlayer(EventPlayer(), HealthType.Shields, 25, true, false);
@@ -378,6 +389,7 @@ if (HeroOf(EventPlayer()) == Hero.Tracer)
     SetMoveSpeed(EventPlayer(), 100);
     SetGravity(EventPlayer(), 100);
     SetAbility1Enabled(EventPlayer(), true);
+    SetAbility2Enabled(EventPlayer(), true);
     SetMaxAmmo(EventPlayer(), 0, 40);
 }
 
@@ -610,12 +622,14 @@ Event.OngoingPlayer
 if (HeroOf(EventPlayer()) == winton)
 {
     SetMaxHealth(EventPlayer(), 100);
+    RemoveAllHealthPoolsFromPlayer(EventPlayer());
     Wait(0.1);
     SetMaxHealth(EventPlayer(), 100*(400/MaxHealth(EventPlayer())));
     StartScalingPlayer(EventPlayer(), 1.0, false);
     SetMoveSpeed(EventPlayer(), 100);
     SetGravity(EventPlayer(), 100);
     SetAbility1Enabled(EventPlayer(), true);
+    SetAbility2Enabled(EventPlayer(), true);
     SetMaxAmmo(EventPlayer(), 0, 100000);
     SetDamageDealt(EventPlayer(), 1);
 }
@@ -737,6 +751,7 @@ Event.OngoingPlayer
 if (HeroOf(EventPlayer()) == Hero.Widowmaker)
 {
     SetMaxHealth(EventPlayer(), 100);
+    RemoveAllHealthPoolsFromPlayer(EventPlayer());
     Wait(0.1);
     SetMaxHealth(EventPlayer(), 100*(50/MaxHealth(EventPlayer())));
     AddHealthPoolToPlayer(EventPlayer(), HealthType.Shields, 100, true, false);
@@ -814,15 +829,87 @@ void Spheres(){
 }
 
 /*
-rule: "venomMined"
-Event.OnDamageDealt
-if (HeroOf(EventPlayer()) == Hero.Widowmaker)
-if (EventAbility() == Button.PrimaryFire)
-if (!(EventWasCriticalHit()))
-if (EventPlayer().wmm.mined.Contains(Victim())){
-    Damage(Victim(), EventPlayer(), 2.5*EventDamage());
-    EventPlayer().wmm.clearStatus();
-}
+==================================================================================================================
+Ana
+==================================================================================================================
 */
 
+class anaManager{
 
+    public Number lastStun;
+    public Player[] naded;
+
+    public constructor(){
+
+    }
+}
+
+playervar anaManager am;
+
+rule: "anaPassives"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Ana)
+{
+    SetMaxHealth(EventPlayer(), 100);
+    RemoveAllHealthPoolsFromPlayer(EventPlayer());
+    Wait(0.1);
+    SetMaxHealth(EventPlayer(), 100*(200/MaxHealth(EventPlayer())));
+    StartScalingPlayer(EventPlayer(), 1.0, false);
+    SetMoveSpeed(EventPlayer(), 100);
+    SetGravity(EventPlayer(), 100);
+    SetAbility1Enabled(EventPlayer(), true);
+    SetAbility2Enabled(EventPlayer(), true);
+    SetMaxAmmo(EventPlayer(), 0, 20);
+    SetDamageDealt(EventPlayer(), 1);
+    SetHealingDealt(EventPlayer(), 1);
+    SetDamageReceived(EventPlayer(), 75);
+}
+
+rule: "anaPassives2"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Ana)
+if (EventPlayer().am == null)
+{
+    EventPlayer().am = new anaManager();
+}
+
+rule: "anaHS"
+Event.OnDamageTaken
+if (HeroOf(EventPlayer()) == Hero.Ana)
+if (!EventWasCriticalHit())
+{
+    Damage(EventPlayer(), Attacker(), EventDamage()*(1/3));
+}
+
+rule: "anaHS"
+Event.OnDamageTaken
+if (HeroOf(EventPlayer()) == Hero.Ana)
+if (EventPlayer().am.lastStun < TotalTimeElapsed()-6)
+if (EventWasCriticalHit())
+{
+    SetStatus(EventPlayer(), Attacker(), Status.Stunned, 1);
+    EventPlayer().am.lastStun = TotalTimeElapsed();
+}
+
+rule: "antiNade"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Ana)
+if (EventAbility() == Button.Ability2)
+{
+    EventPlayer().am.naded.Append(Victim());
+    Damage(Victim(), EventPlayer(), 60);
+
+    Wait(3);
+
+    EventPlayer().am.naded = EmptyArray();
+}
+
+rule: "StealAmmo"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Ana)
+if (EventAbility() == Button.PrimaryFire)
+if (EventPlayer().am.naded.Contains(Victim()))
+{
+    SetAmmo(Victim(), 0, Ammo(Victim())-1);
+    SetAmmo(EventPlayer(), 0, Ammo(Victim())+1);
+}

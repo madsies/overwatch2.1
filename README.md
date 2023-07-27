@@ -44,7 +44,7 @@ Now Grants teammates who walk inside of the bubble an extra 50 Shield health
 
 ### Sombra
 ```
-Health: 200 -> 50
+Health: 200 -> 25HP/50Shield
 
 Stealth:
 Damage Reduction:0 -> 99%
@@ -120,6 +120,19 @@ Ground pharah innit
 ```
 
 ## Support
+
+
+### Ana
+
+```
+Passive - The Other Eye:
+When ana gets headshot, she is stunned for 1s (6s cooldown), however, she takes 25% less damage from ALL headshots.
+
+Anti Nade:
+Every Time Ana shoots a target who is anti-naded, the target loses 1 ammo, and ana gains one.
+
+
+```
 
 ### Moira
 ```
