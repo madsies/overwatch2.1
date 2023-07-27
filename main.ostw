@@ -12,8 +12,9 @@ playervar tracerCooldowns tc;
 rule: "bans"
 Event.OngoingPlayer
 {
-    SetAllowedHeroes(EventPlayer(), [Hero.Moira, Hero.Reinhardt, Hero.Sombra, Hero.Mercy, Hero.Pharah, Hero.Tracer]);
+    SetAllowedHeroes(EventPlayer(), [Hero.Moira, Hero.Reinhardt, Hero.Sombra, Hero.Pharah, Hero.Tracer, winton, Hero.Widowmaker]);
 }
+
 
 
 /*
@@ -468,9 +469,250 @@ class tracerCooldowns
 
 /*
 ==================================================================================================================
-Next Hero
+Winston
 ==================================================================================================================
 */
+
+class wintonManager{
+    private Number attackStacks = 0;
+    private Number lastStack = 0;
+    private Number hudID = -1;
+    private Number comboID = -2;
+    private Boolean helmet;
+    private Number bubbleTimer = 0;
+    public Any[] pools;
+    public Player[] inBubble = new Player[]();
+    public Any bubble;
+    public Boolean placed = false;
+    private Number combo = 1;
+    private Number lastUltHit = 0;
+
+    public constructor(){
+        hudID = CreateHudText(EventPlayer(), null, null, "Stacks:"+getStacks(), Location.Top, 0, Color.Gray, Color.Gray, Color.Gray, HudTextRev.String, Spectators.VisibleAlways);
+        comboID = CreateHudText(EventPlayer(), null, null, "Combo:"+getCombo(), Location.Left, 0, Color.Red, Color.Red, Color.Red, HudTextRev.String, Spectators.VisibleAlways);
+    }
+
+    public void increaseCombo(){
+        DestroyHudText(comboID);
+        if (lastUltHit > TotalTimeElapsed()-0.5){
+            combo++;
+            comboID = CreateHudText(EventPlayer(), null, null, "Combo:"+RoundToInteger(getCombo()), Location.Left, 0, Color.Red, Color.Red, Color.Red, HudTextRev.String, Spectators.VisibleAlways);
+            lastUltHit = TotalTimeElapsed();
+        }
+        else{
+            combo = 1;
+            lastUltHit = TotalTimeElapsed();
+        }
+    }
+
+    public Number getLastHit(){
+        return lastUltHit;
+    }
+    
+
+    public Number getCombo(){
+        return combo;
+    }
+
+    public Number getStacks()
+    {
+        return attackStacks;
+    }
+
+    public void hud(){
+        DestroyHudText(hudID);
+        hudID = CreateHudText(EventPlayer(), null, null, "Stacks:"+EventPlayer().wm.getStacks(), Location.Top, 0, Color.Gray, Color.Gray, Color.Gray, HudTextRev.String, Spectators.VisibleAlways);
+    }
+
+    public void enableHelmet(){
+        helmet = true;
+    }
+
+    public void bubblePlaced(){
+        bubbleTimer = TotalTimeElapsed();
+    }
+
+    public Number getLastBubble(){
+        return bubbleTimer;
+    }
+
+
+    public void disableHelmet(){
+        helmet = false;
+    }
+
+    public Boolean helmetStatus(){
+        return helmet;
+    }
+
+    public void addStack( Player p)
+    {
+        if(ArrayContains(AllTankHeroes(), p.Hero())){
+            if (TotalTimeElapsed()-1 > lastStack){
+                resetStacks();
+            }
+            else{
+                attackStacks++;
+                if (attackStacks >= 50){
+                    SetStatus(p, null, Status.Stunned, 1.5);
+                    resetStacks();
+                }
+                tick();
+            }
+        }
+        if (TotalTimeElapsed()-1 > lastStack){
+            resetStacks();
+        }
+        
+    }
+
+
+    private void tick(){
+       lastStack = TotalTimeElapsed(); 
+    }
+    
+
+    public void resetStacks()
+    {
+        attackStacks = 0;
+        tick();
+    }
+
+    void checkRadius(Vector pos, Player p){
+        while(p.wm.getLastBubble()+8 > TotalTimeElapsed()){
+            foreach (Player pl in (PlayersWithinRadius(pos, 5, p.Team(), RadiusLOS.Off))){
+                if (inBubble.Contains(pl)){
+                    break;
+                }
+                else{
+                    pools = pools.Append(AddHealthPoolToPlayer(pl, HealthType.Shields, 50, true, true));
+                    inBubble = inBubble.Append(pl);
+                }
+            }
+            Wait(0.2);
+        }
+        foreach(Any a in pools){
+            RemoveHealthPoolFromPlayer(a);
+        }
+        DestroyEffect(bubble);
+        placed = false;
+        pools = EmptyArray();
+        inBubble = EmptyArray();
+    }
+
+}
+
+globalvar define winton = Hero.Winston;
+playervar wintonManager wm = null;
+
+rule: "wintonPassives"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == winton)
+{
+    SetMaxHealth(EventPlayer(), 100);
+    Wait(0.1);
+    SetMaxHealth(EventPlayer(), 100*(400/MaxHealth(EventPlayer())));
+    StartScalingPlayer(EventPlayer(), 1.0, false);
+    SetMoveSpeed(EventPlayer(), 100);
+    SetGravity(EventPlayer(), 100);
+    SetAbility1Enabled(EventPlayer(), true);
+    SetMaxAmmo(EventPlayer(), 0, 100000);
+    SetDamageDealt(EventPlayer(), 1);
+}
+
+rule: "wintonPassives"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == winton)
+if (EventPlayer().wm == null)
+{
+    EventPlayer().wm = new wintonManager();
+}
+
+rule: "wintonPrimary"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == winton)
+if (EventAbility() == Button.PrimaryFire)
+{
+    EventPlayer().wm.addStack(Victim());
+    EventPlayer().wm.hud();
+    Damage(Victim(), EventPlayer(), 600);
+}
+
+rule: "wintonLand"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == winton)
+if (EventAbility() == Button.Ability1)
+{
+    Damage(Victim(), EventPlayer(), 3000);
+}
+
+rule: "wintonLand"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == winton)
+if (EventAbility() == Button.Ability1)
+if (EventPlayer().DistanceTo(Victim()) <= 1)
+{
+    Damage(Victim(), EventPlayer(), 3000);
+}
+
+rule: "wintonHelmet"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == winton)
+if (IsButtonHeld(EventPlayer(), Button.Ability1))
+{
+    EventPlayer().wm.enableHelmet();
+    SetDamageReceived(EventPlayer(), 50);
+    WaitUntil(!(IsInAir(EventPlayer())), 10);
+    EventPlayer().wm.disableHelmet();
+    SetDamageReceived(EventPlayer(), 100);
+}
+
+rule: "wintonHelmProtection"
+Event.OnDamageTaken
+if (HeroOf(EventPlayer()) == winton)
+if (!EventWasCriticalHit())
+if(EventPlayer().wm.helmetStatus())
+{
+    Damage(EventPlayer(), Attacker(), EventDamage());
+}
+
+
+rule: "sniperMonke"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == winton)
+if (EventAbility() == Button.SecondaryFire)
+{
+    Damage(Victim(), EventPlayer(), 3000);
+}
+
+rule: "wintonBubble"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == winton)
+if (IsButtonHeld(EventPlayer(), Button.Ability2))
+if (EventPlayer().IsUsingAbility2())
+if (EventPlayer().wm.placed == false)
+{
+    EventPlayer().wm.placed = true;
+    EventPlayer().wm.bubblePlaced();
+    EventPlayer().wm.bubble = CreateEffect(AllPlayers(), Effect.Sphere, Color.Blue, EventPlayer().Position(), 5, EffectRev.None);
+    EventPlayer().wm.checkRadius(EventPlayer().Position(), EventPlayer());
+}
+
+
+/*rule: "wintonUlt"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == winton)
+if (IsUsingUltimate(EventPlayer()))
+if (IsButtonHeld(EventPlayer(), Button.PrimaryFire))
+{
+    EventPlayer().wm.increaseCombo();
+    
+}
+*/
+
+
+
+
 
 
 
