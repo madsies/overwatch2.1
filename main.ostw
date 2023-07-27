@@ -710,9 +710,119 @@ if (IsButtonHeld(EventPlayer(), Button.PrimaryFire))
 }
 */
 
+/*
+==================================================================================================================
+Window
+==================================================================================================================
+*/
+
+class widowManager {
+    public Player[] mined = new Player[]();
+    public Any[] BlindSpheres = new Any[]();
+
+    public constructor(){
+        mined = [];
+    }
+
+    public void clearStatus(){
+        mined = [];
+    }
+}
 
 
+playervar widowManager wmm = null;
 
+rule: "widowPassives"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Widowmaker)
+{
+    SetMaxHealth(EventPlayer(), 100);
+    Wait(0.1);
+    SetMaxHealth(EventPlayer(), 100*(50/MaxHealth(EventPlayer())));
+    AddHealthPoolToPlayer(EventPlayer(), HealthType.Shields, 100, true, false);
+    StartScalingPlayer(EventPlayer(), 1.0, false);
+    SetMoveSpeed(EventPlayer(), 100);
+    SetGravity(EventPlayer(), 100);
+    SetAbility1Enabled(EventPlayer(), true);
+    SetAbility2Enabled(EventPlayer(), false);
+    SetMaxAmmo(EventPlayer(), 0, 100000);
+    SetDamageDealt(EventPlayer(), 1);
+}
 
+rule: "widowPassives2"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Widowmaker)
+if (EventPlayer().wmm == null)
+{
+    EventPlayer().wmm = new widowManager();
+}
+
+rule: "widowPrimary"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Widowmaker)
+if (EventAbility() == Button.PrimaryFire){
+    Damage(Victim(), EventPlayer(), EventDamage()*10000);
+}
+
+rule: "widowGrapple"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Widowmaker)
+if (EventPlayer().IsUsingAbility1())
+{
+    Teleport(RayCastHitPlayer(EventPlayer(), EventPlayer().Position()+(EventPlayer().FacingDirection()*50), AllPlayers(EventPlayer().Team()), null, false), EventPlayer());
+}
+
+rule: "crack"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Widowmaker)
+if (IsButtonHeld(EventPlayer(), Button.Ability2))
+{
+    SetPlayerHealth(EventPlayer(), Health(EventPlayer())-50);
+    SetMoveSpeed(EventPlayer(), 130);
+    Wait(4);
+    SetMoveSpeed(EventPlayer(), 100);
+}
+
+rule: "blind"
+Event.OngoingPlayer
+if (HeroOf(EventPlayer()) == Hero.Widowmaker)
+if (IsButtonHeld(EventPlayer(), Button.Ultimate))
+{
+    Spheres();
+}
+
+void Spheres(){
+    for (Number i= 0; i < 150; i++){
+        foreach(Player p in AllPlayers(OppositeTeamOf(EventPlayer().Team()))){
+            EventPlayer().wmm.BlindSpheres = EventPlayer().wmm.BlindSpheres.Append(CreateEffect(p, Effect.BadAura, Color.Black, p.EyePosition()+p.FacingDirection()*2.0, 4, EffectRev.None));
+            EventPlayer().wmm.BlindSpheres = EventPlayer().wmm.BlindSpheres.Append(CreateEffect(p, Effect.BadAura, Color.Black, p.EyePosition()+p.FacingDirection()*2.0, 4, EffectRev.None));
+            EventPlayer().wmm.BlindSpheres = EventPlayer().wmm.BlindSpheres.Append(CreateEffect(p, Effect.BadAura, Color.Black, p.EyePosition()+p.FacingDirection()*2.0, 4, EffectRev.None));
+            EventPlayer().wmm.BlindSpheres = EventPlayer().wmm.BlindSpheres.Append(CreateEffect(p, Effect.BadAura, Color.Black, p.EyePosition()+p.FacingDirection()*2.0, 4, EffectRev.None));
+            EventPlayer().wmm.BlindSpheres = EventPlayer().wmm.BlindSpheres.Append(CreateEffect(p, Effect.BadAura, Color.Black, p.EyePosition()+p.FacingDirection()*2.0, 4, EffectRev.None));
+
+            StartForcingPlayerOutlines(AllPlayers(EventPlayer().Team()), AllPlayers(OppositeTeamOf(EventPlayer().Team())), false, Color.Black, OutlineType.Occluded);
+
+        }
+        Wait(0.1);
+        foreach(Any a in EventPlayer().wmm.BlindSpheres){
+            DestroyEffect(a);
+        }
+        EventPlayer().wmm.BlindSpheres = null;
+
+    }
+    StopForcingPlayerOutlines(AllPlayers(EventPlayer().Team()), AllPlayers(OppositeTeamOf(EventPlayer().Team())));
+}
+
+/*
+rule: "venomMined"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Widowmaker)
+if (EventAbility() == Button.PrimaryFire)
+if (!(EventWasCriticalHit()))
+if (EventPlayer().wmm.mined.Contains(Victim())){
+    Damage(Victim(), EventPlayer(), 2.5*EventDamage());
+    EventPlayer().wmm.clearStatus();
+}
+*/
 
 

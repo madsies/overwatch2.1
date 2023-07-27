@@ -19,6 +19,27 @@ Will change ultimate eventually, probably weak rn
 
 ```
 
+
+### Winton
+
+```
+Health: 500 -> 400
+
+NEW PASSIVE - Tazer:
+If Winston primary fires an enemy tank for 4 seconds, they get stunned for 1.5s
+
+Secondary Fire:
+1-50 Damage -> 30 Damage
+
+Jump Pack:
+1-50 Damage -> 30-60 Damage (60 at <1m)
+
+Barrier Projector:
+Now Grants teammates who walk inside of the bubble an extra 50 Shield health
+
+
+```
+
 ## DPS
 
 ### Sombra
@@ -42,6 +63,22 @@ Execute: Targets below 25% hp are insta killed by machine pistol.
 
 Dev Comment:
 rat
+```
+
+### Widowmaker
+```
+Health: 175 -> 50HP/100Shield
+
+Grapple: Pulls teammates towards you (janky asf sorry)
+
+Venom Mine:
+REMOVED
+
+Drugs - NEW ABILITY
+Widowmaker does drugs and gains 30% move speed for 5 seconds, but loses 50hp (no cooldown)
+
+Infra-Sight:
+Now Disrupts enemies vision.
 ```
 
 ### Tracer
