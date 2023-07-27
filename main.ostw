@@ -24,6 +24,8 @@ class generalManager{
     public Boolean ult;
     public Number scale;
     public Player player;
+    public Number defaultGravity;
+    public Number defaultMaxAmmo;
 
     public constructor(){
         player = EventPlayer();
@@ -39,6 +41,8 @@ class generalManager{
         abil2 = true;
         ult = true;
         scale = 1;
+        defaultGravity = 100;
+        defaultMaxAmmo = 1;
     }
 
     public void fullReset(){
@@ -53,6 +57,7 @@ class generalManager{
         revertAbilOne();
         revertAbilTwo();
         revertUlt();
+        revertAmmo();
     }
     
     public void revertHealth(){
@@ -60,6 +65,11 @@ class generalManager{
         Wait(0.05);
         SetMaxHealth(player, defaultHealthScalar);
         SetPlayerHealth(player, MaxHealth(player));
+    }
+
+    public void revertAmmo(){
+        SetMaxAmmo(player, 0, defaultMaxAmmo);
+        SetAmmo(player, 0, defaultMaxAmmo);
     }
     
     public void revertScale(){
@@ -105,6 +115,10 @@ class generalManager{
         SetUltimateAbilityEnabled(player, ult);
     }
 
+    public void revertGravity(){
+        SetGravity(player, defaultGravity);
+    }
+
 }
 
 rule: "bans"
@@ -131,6 +145,8 @@ if (IsHeroBeingPlayed(Hero.Reinhardt, EventPlayer().Team()))
     SetMaxHealth(EventPlayer(), 100);
     RemoveAllHealthPoolsFromPlayer(EventPlayer());
 
+    Wait(0.016);
+
     EventPlayer().manager.defaultHealthScalar = 100*(700/MaxHealth(EventPlayer()));
     EventPlayer().manager.defaultArmour = 0;
     EventPlayer().manager.defaultShield = 0;
@@ -143,6 +159,7 @@ if (IsHeroBeingPlayed(Hero.Reinhardt, EventPlayer().Team()))
     EventPlayer().manager.abil1 = true;
     EventPlayer().manager.abil2 = true;
     EventPlayer().manager.ult = true;
+    EventPlayer().manager.defaultGravity = 100;
     Wait(0.1);
     
     EventPlayer().manager.fullReset();
@@ -392,10 +409,23 @@ if (HeroOf(EventPlayer()) == Hero.Mercy)
 {
     SetMaxHealth(EventPlayer(), 100);
     RemoveAllHealthPoolsFromPlayer(EventPlayer());
+
+    EventPlayer().manager.defaultHealthScalar = 100*(150/MaxHealth(EventPlayer()));
+    EventPlayer().manager.defaultArmour = 0;
+    EventPlayer().manager.defaultShield = 0;
+    EventPlayer().manager.defaultResist = 100;
+    EventPlayer().manager.defaultDamage = 100;
+    EventPlayer().manager.defaultSpeed = 120;
+    EventPlayer().manager.defaultHeal = 100;
+    EventPlayer().manager.defaultHealRec = 100;
+    EventPlayer().manager.scale = 1;
+    EventPlayer().manager.abil1 = true;
+    EventPlayer().manager.abil2 = true;
+    EventPlayer().manager.ult = true;
+    EventPlayer().manager.defaultGravity = 100;
     Wait(0.1);
-    SetMaxHealth(EventPlayer(), 100*(100/MaxHealth(EventPlayer())));
-    SetAbility1Enabled(EventPlayer(), true);
-    SetAbility2Enabled(EventPlayer(), true);
+    
+    EventPlayer().manager.fullReset();
 }
 
 rule: "setupHealee"
@@ -440,14 +470,24 @@ if (HeroOf(EventPlayer()) == Hero.Pharah)
 {
     SetMaxHealth(EventPlayer(), 100);
     RemoveAllHealthPoolsFromPlayer(EventPlayer());
+
+    EventPlayer().manager.defaultHealthScalar = 100*(250/MaxHealth(EventPlayer()));
+    EventPlayer().manager.defaultArmour = 0;
+    EventPlayer().manager.defaultShield = 0;
+    EventPlayer().manager.defaultResist = 100;
+    EventPlayer().manager.defaultDamage = 1;
+    EventPlayer().manager.defaultSpeed = 170;
+    EventPlayer().manager.defaultHeal = 100;
+    EventPlayer().manager.defaultHealRec = 100;
+    EventPlayer().manager.scale = 1;
+    EventPlayer().manager.abil1 = false;
+    EventPlayer().manager.abil2 = true;
+    EventPlayer().manager.ult = true;
+    EventPlayer().manager.defaultGravity = 150;
     Wait(0.1);
-    SetMaxHealth(EventPlayer(), 100*(249/MaxHealth(EventPlayer())));
-    StartScalingPlayer(EventPlayer(), 1.0, false);
-    SetMoveSpeed(EventPlayer(), 170);
-    SetGravity(EventPlayer(), 150);
-    SetAbility1Enabled(EventPlayer(), false);
-    SetAbility2Enabled(EventPlayer(), true);
-    SetMaxAmmo(EventPlayer(), 0, 12);
+    
+    EventPlayer().manager.fullReset();
+
 }
 
 rule: "grounded"
@@ -457,8 +497,8 @@ if (EventPlayer().IsInAir())
 {
     Wait(1);
     grounded();
-    SetMoveSpeed(EventPlayer(), 170);
-    SetGravity(EventPlayer(), 150); 
+    EventPlayer().manager.revertSpeed();
+    EventPlayer().manager.revertGravity();
 }
 
 void grounded() "grounded"
@@ -500,6 +540,16 @@ if (EventPlayer() == Victim())
     SetKnockbackReceived(EventPlayer(), 100);
 }
 
+rule: "damageScale"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Pharah)
+if (EventPlayer() != Victim())
+{
+    Damage(Victim(), EventPlayer(), EventDamage()*10000);
+    Wait(0.016);
+}
+
+
 rule: "pharahUlt"
 Event.OngoingPlayer
 if (HeroOf(EventPlayer()) == Hero.Pharah)
@@ -526,17 +576,43 @@ if (HeroOf(EventPlayer()) == Hero.Tracer)
 {
     SetMaxHealth(EventPlayer(), 100);
     RemoveAllHealthPoolsFromPlayer(EventPlayer());
+
+    EventPlayer().manager.defaultHealthScalar = 100*(125/MaxHealth(EventPlayer()));
+    EventPlayer().manager.defaultArmour = 0;
+    EventPlayer().manager.defaultShield = 25;
+    EventPlayer().manager.defaultResist = 100;
+    EventPlayer().manager.defaultDamage = 1;
+    EventPlayer().manager.defaultSpeed = 100;
+    EventPlayer().manager.defaultHeal = 100;
+    EventPlayer().manager.defaultHealRec = 100;
+    EventPlayer().manager.scale = 1;
+    EventPlayer().manager.abil1 = true;
+    EventPlayer().manager.abil2 = true;
+    EventPlayer().manager.ult = true;
+    EventPlayer().manager.defaultGravity = 100;
+    EventPlayer().manager.defaultMaxAmmo = 40;
     Wait(0.1);
-    SetMaxHealth(EventPlayer(), 100*(125/MaxHealth(EventPlayer())));
-    AddHealthPoolToPlayer(EventPlayer(), HealthType.Shields, 25, true, false);
-    StartScalingPlayer(EventPlayer(), 1.0, false);
-    SetMoveSpeed(EventPlayer(), 100);
-    SetGravity(EventPlayer(), 100);
-    SetAbility1Enabled(EventPlayer(), true);
-    SetAbility2Enabled(EventPlayer(), true);
-    SetMaxAmmo(EventPlayer(), 0, 40);
+    
+    EventPlayer().manager.fullReset();
 }
 
+rule: "tracerDamage"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Tracer)
+{
+    Heal(Victim(), null, EventDamage());
+    Damage(Victim(), EventPlayer(), EventDamage()*10000);
+    Wait(0.016);
+}
+
+rule: "tracerPrim"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == Hero.Tracer)
+if (EventAbility() == Button.PrimaryFire)
+{
+    Damage(Victim(), EventPlayer(), EventDamage()*10000);
+    Wait(0.016);
+}
 
 rule: "blinkMelee"
 Event.OngoingPlayer
@@ -588,9 +664,9 @@ if (EventPlayer().IsButtonHeld(Button.Ability2))
 if (EventPlayer().tc.getRecallCD()+0.3 > TotalTimeElapsed())
 {
     SetAbilityCharge(EventPlayer(), Button.Ability1, AbilityCharge(EventPlayer(), Button.Ability1)+1);
-    SetDamageDealt(EventPlayer(), 125);
+    SetDamageDealt(EventPlayer(), EventPlayer().manager.defaultDamage*1.25);
     Wait(5);
-    SetDamageDealt(EventPlayer(), 100);
+    EventPlayer().manager.revertDamage();
 }
 
 // Check if work on multiple, unsure.
@@ -632,8 +708,7 @@ Winston
 class wintonManager{
     private Number attackStacks = 0;
     private Number lastStack = 0;
-    private Number hudID = -1;
-    private Number comboID = -2;
+    public Number comboID = -2;
     private Boolean helmet;
     private Number bubbleTimer = 0;
     public Any[] pools;
@@ -642,20 +717,24 @@ class wintonManager{
     public Boolean placed = false;
     private Number combo = 1;
     private Number lastUltHit = 0;
+    public Any cooldownID;
 
     public constructor(){
-        hudID = CreateHudText(EventPlayer(), null, null, "Stacks:"+getStacks(), Location.Top, 0, Color.Gray, Color.Gray, Color.Gray, HudTextRev.String, Spectators.VisibleAlways);
         comboID = CreateHudText(EventPlayer(), null, null, "Combo:"+getCombo(), Location.Left, 0, Color.Red, Color.Red, Color.Red, HudTextRev.String, Spectators.VisibleAlways);
+        cooldownID = CreateHudText(EventPlayer(), null, null, "test                           ", Location.Right, 1, Color.Green, Color.Green, Color.Green, HudTextRev.String, Spectators.VisibleAlways );
     }
 
     public void increaseCombo(){
         DestroyHudText(comboID);
-        if (lastUltHit > TotalTimeElapsed()-0.5){
+        if (lastUltHit > TotalTimeElapsed()-1.0){
             combo++;
             comboID = CreateHudText(EventPlayer(), null, null, "Combo:"+RoundToInteger(getCombo()), Location.Left, 0, Color.Red, Color.Red, Color.Red, HudTextRev.String, Spectators.VisibleAlways);
             lastUltHit = TotalTimeElapsed();
         }
         else{
+            if (combo >= 8){
+                SetUltimateCharge(EventPlayer(), UltimateChargePercent(EventPlayer())+20);
+            }
             combo = 1;
             lastUltHit = TotalTimeElapsed();
         }
@@ -673,11 +752,6 @@ class wintonManager{
     public Number getStacks()
     {
         return attackStacks;
-    }
-
-    public void hud(){
-        DestroyHudText(hudID);
-        hudID = CreateHudText(EventPlayer(), null, null, "Stacks:"+EventPlayer().wm.getStacks(), Location.Top, 0, Color.Gray, Color.Gray, Color.Gray, HudTextRev.String, Spectators.VisibleAlways);
     }
 
     public void enableHelmet(){
@@ -746,15 +820,25 @@ class wintonManager{
                 }
             }
             Wait(0.2);
+            DestroyHudText(cooldownID);
+            cooldownID = CreateHudText(EventPlayer(), null, null, 16-(TotalTimeElapsed() - p.wm.getLastBubble())+"                               ", Location.Right, 1, Color.Green, Color.Green, Color.Green, HudTextRev.String, Spectators.VisibleAlways );
         }
         foreach(Any a in pools){
             RemoveHealthPoolFromPlayer(a);
         }
         DestroyEffect(bubble);
-        placed = false;
         pools = EmptyArray();
         inBubble = EmptyArray();
+        while(p.wm.getLastBubble()+16 > TotalTimeElapsed()){
+            DestroyHudText(cooldownID);
+            cooldownID = CreateHudText(EventPlayer(), null, null, 16-(TotalTimeElapsed() - p.wm.getLastBubble())+"                               ", Location.Right, 1, Color.Green, Color.Green, Color.Green, HudTextRev.String, Spectators.VisibleAlways );
+            Wait(0.2);
+        }
+        DestroyHudText(cooldownID);
+        placed = false;
     }
+
+
 
 }
 
@@ -767,16 +851,38 @@ if (HeroOf(EventPlayer()) == winton)
 {
     SetMaxHealth(EventPlayer(), 100);
     RemoveAllHealthPoolsFromPlayer(EventPlayer());
-    Wait(0.1);
-    SetMaxHealth(EventPlayer(), 100*(400/MaxHealth(EventPlayer())));
-    StartScalingPlayer(EventPlayer(), 1.0, false);
-    SetMoveSpeed(EventPlayer(), 100);
-    SetGravity(EventPlayer(), 100);
-    SetAbility1Enabled(EventPlayer(), true);
-    SetAbility2Enabled(EventPlayer(), true);
-    SetMaxAmmo(EventPlayer(), 0, 100000);
-    SetDamageDealt(EventPlayer(), 1);
+
+    Wait(0.016);
+
+    EventPlayer().manager.defaultHealthScalar = 100*(400/MaxHealth(EventPlayer()));
+    EventPlayer().manager.defaultArmour = 0;
+    EventPlayer().manager.defaultShield = 0;
+    EventPlayer().manager.defaultResist = 100;
+    EventPlayer().manager.defaultDamage = 1;
+    EventPlayer().manager.defaultSpeed = 100;
+    EventPlayer().manager.defaultHeal = 100;
+    EventPlayer().manager.defaultHealRec = 100;
+    EventPlayer().manager.scale = 1;
+    EventPlayer().manager.abil1 = true;
+    EventPlayer().manager.abil2 = false;
+    EventPlayer().manager.ult = true;
+    EventPlayer().manager.defaultGravity = 100;
+    EventPlayer().manager.defaultMaxAmmo = 99999;
+    Wait(0.016);
+
+    EventPlayer().manager.fullReset();
+    
 }
+
+rule: "wintonmelee"
+Event.OnDamageDealt
+if (HeroOf(EventPlayer()) == winton)
+if (EventAbility() == Button.Melee)
+{
+    Heal(Victim(), null, EventDamage());
+    Damage(Victim(), EventPlayer(), 3000);
+}
+
 
 rule: "wintonPassives"
 Event.OngoingPlayer
@@ -792,7 +898,6 @@ if (HeroOf(EventPlayer()) == winton)
 if (EventAbility() == Button.PrimaryFire)
 {
     EventPlayer().wm.addStack(Victim());
-    EventPlayer().wm.hud();
     Damage(Victim(), EventPlayer(), 600);
 }
 
@@ -822,7 +927,7 @@ if (IsButtonHeld(EventPlayer(), Button.Ability1))
     SetDamageReceived(EventPlayer(), 50);
     WaitUntil(!(IsInAir(EventPlayer())), 10);
     EventPlayer().wm.disableHelmet();
-    SetDamageReceived(EventPlayer(), 100);
+    EventPlayer().manager.revertResist();
 }
 
 rule: "wintonHelmProtection"
@@ -831,7 +936,9 @@ if (HeroOf(EventPlayer()) == winton)
 if (!EventWasCriticalHit())
 if(EventPlayer().wm.helmetStatus())
 {
+    SetDamageDealt(Attacker(), 100);
     Damage(EventPlayer(), Attacker(), EventDamage());
+    Attacker().manager.revertDamage();
 }
 
 
@@ -847,7 +954,6 @@ rule: "wintonBubble"
 Event.OngoingPlayer
 if (HeroOf(EventPlayer()) == winton)
 if (IsButtonHeld(EventPlayer(), Button.Ability2))
-if (EventPlayer().IsUsingAbility2())
 if (EventPlayer().wm.placed == false)
 {
     EventPlayer().wm.placed = true;
@@ -857,16 +963,24 @@ if (EventPlayer().wm.placed == false)
 }
 
 
-/*rule: "wintonUlt"
+rule: "wintonUlt"
 Event.OnDamageDealt
 if (HeroOf(EventPlayer()) == winton)
 if (IsUsingUltimate(EventPlayer()))
-if (IsButtonHeld(EventPlayer(), Button.PrimaryFire))
 {
     EventPlayer().wm.increaseCombo();
-    
+    Damage(Victim(), EventPlayer(), 4000 + (500*EventPlayer().wm.getCombo()));
+    Wait(0.016);
 }
-*/
+
+rule: "wintonHUD"
+Event.OngoingPlayer
+if (IsUsingUltimate(EventPlayer()))
+{
+    Wait(10);
+    DestroyHudText(EventPlayer().wm.comboID);
+}
+
 
 /*
 ==================================================================================================================
@@ -896,16 +1010,26 @@ if (HeroOf(EventPlayer()) == Hero.Widowmaker)
 {
     SetMaxHealth(EventPlayer(), 100);
     RemoveAllHealthPoolsFromPlayer(EventPlayer());
-    Wait(0.1);
-    SetMaxHealth(EventPlayer(), 100*(50/MaxHealth(EventPlayer())));
-    AddHealthPoolToPlayer(EventPlayer(), HealthType.Shields, 100, true, false);
-    StartScalingPlayer(EventPlayer(), 1.0, false);
-    SetMoveSpeed(EventPlayer(), 100);
-    SetGravity(EventPlayer(), 100);
-    SetAbility1Enabled(EventPlayer(), true);
-    SetAbility2Enabled(EventPlayer(), false);
-    SetMaxAmmo(EventPlayer(), 0, 100000);
-    SetDamageDealt(EventPlayer(), 1);
+
+    Wait(0.016);
+
+    EventPlayer().manager.defaultHealthScalar = 100*(50/MaxHealth(EventPlayer()));
+    EventPlayer().manager.defaultArmour = 0;
+    EventPlayer().manager.defaultShield = 100;
+    EventPlayer().manager.defaultResist = 100;
+    EventPlayer().manager.defaultDamage = 1;
+    EventPlayer().manager.defaultSpeed = 100;
+    EventPlayer().manager.defaultHeal = 100;
+    EventPlayer().manager.defaultHealRec = 100;
+    EventPlayer().manager.scale = 1;
+    EventPlayer().manager.abil1 = true;
+    EventPlayer().manager.abil2 = false;
+    EventPlayer().manager.ult = true;
+    EventPlayer().manager.defaultGravity = 100;
+    EventPlayer().manager.defaultMaxAmmo = 30;
+    Wait(0.016);
+
+    EventPlayer().manager.fullReset();
 }
 
 rule: "widowPassives2"
@@ -916,11 +1040,13 @@ if (EventPlayer().wmm == null)
     EventPlayer().wmm = new widowManager();
 }
 
-rule: "widowPrimary"
+rule: "widowPrimary" 
 Event.OnDamageDealt
 if (HeroOf(EventPlayer()) == Hero.Widowmaker)
 if (EventAbility() == Button.PrimaryFire){
+    SetDamageReceived(Victim(), 100);
     Damage(Victim(), EventPlayer(), EventDamage()*10000);
+    Victim().manager.revertResist();
 }
 
 rule: "widowGrapple"
@@ -996,17 +1122,26 @@ if (HeroOf(EventPlayer()) == Hero.Ana)
 {
     SetMaxHealth(EventPlayer(), 100);
     RemoveAllHealthPoolsFromPlayer(EventPlayer());
-    Wait(0.1);
-    SetMaxHealth(EventPlayer(), 100*(200/MaxHealth(EventPlayer())));
-    StartScalingPlayer(EventPlayer(), 1.0, false);
-    SetMoveSpeed(EventPlayer(), 100);
-    SetGravity(EventPlayer(), 100);
-    SetAbility1Enabled(EventPlayer(), true);
-    SetAbility2Enabled(EventPlayer(), true);
-    SetMaxAmmo(EventPlayer(), 0, 20);
-    SetDamageDealt(EventPlayer(), 1);
-    SetHealingDealt(EventPlayer(), 1);
-    SetDamageReceived(EventPlayer(), 75);
+
+    Wait(0.016);
+
+    EventPlayer().manager.defaultHealthScalar = 100*(200/MaxHealth(EventPlayer()));
+    EventPlayer().manager.defaultArmour = 0;
+    EventPlayer().manager.defaultShield = 0;
+    EventPlayer().manager.defaultResist = 75;
+    EventPlayer().manager.defaultDamage = 1;
+    EventPlayer().manager.defaultSpeed = 100;
+    EventPlayer().manager.defaultHeal = 1;
+    EventPlayer().manager.defaultHealRec = 100;
+    EventPlayer().manager.scale = 1;
+    EventPlayer().manager.abil1 = true;
+    EventPlayer().manager.abil2 = true;
+    EventPlayer().manager.ult = true;
+    EventPlayer().manager.defaultGravity = 100;
+    EventPlayer().manager.defaultMaxAmmo = 20;
+    Wait(0.016);
+
+    EventPlayer().manager.fullReset();
 }
 
 rule: "anaPassives2"
@@ -1022,7 +1157,9 @@ Event.OnDamageTaken
 if (HeroOf(EventPlayer()) == Hero.Ana)
 if (!EventWasCriticalHit())
 {
+    SetDamageDealt(Attacker(), 100);
     Damage(EventPlayer(), Attacker(), EventDamage()*(1/3));
+    SetDamageDealt(Attacker(), Attacker().manager.defaultDamage);
 }
 
 rule: "anaHS"
