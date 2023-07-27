@@ -7,12 +7,111 @@ General
 
 playervar define slowTimer = 0;
 playervar define healee = null;
+playervar generalManager manager;
 playervar tracerCooldowns tc;
+
+class generalManager{
+    public Number defaultHealthScalar;
+    public Number defaultArmour;
+    public Number defaultShield;
+    public Number defaultDamage;
+    public Number defaultResist;
+    public Number defaultHeal;
+    public Number defaultHealRec;
+    public Number defaultSpeed;
+    public Boolean abil1;
+    public Boolean abil2;
+    public Boolean ult;
+    public Number scale;
+    public Player player;
+
+    public constructor(){
+        player = EventPlayer();
+        defaultHealthScalar = 100;
+        defaultArmour = 0;
+        defaultShield = 0;
+        defaultDamage = 1;
+        defaultResist = 100;
+        defaultHeal = 1;
+        defaultHealRec = 100;
+        defaultSpeed = 100;
+        abil1 = true;
+        abil2 = true;
+        ult = true;
+        scale = 1;
+    }
+
+    public void fullReset(){
+        revertHealth();
+        revertScale();
+        revertBonuses();
+        revertDamage();
+        revertResist();
+        revertSpeed();
+        revertHealing();
+        revertHealingRecieved();
+        revertAbilOne();
+        revertAbilTwo();
+        revertUlt();
+    }
+    
+    public void revertHealth(){
+        SetMaxHealth(player, 100);
+        Wait(0.05);
+        SetMaxHealth(player, defaultHealthScalar);
+        SetPlayerHealth(player, MaxHealth(player));
+    }
+    
+    public void revertScale(){
+        StopScalingPlayer(player);
+        StartScalingPlayer(player, scale);
+    }
+
+    public void revertBonuses(){
+        RemoveAllHealthPoolsFromPlayer(player);
+        if (defaultShield > 0) AddHealthPoolToPlayer(player, HealthType.Shields, defaultShield, true, true);
+        if (defaultArmour > 0) AddHealthPoolToPlayer(player, HealthType.Armor, defaultArmour, true, true);
+    }
+
+    public void revertDamage(){
+        SetDamageDealt(player, defaultDamage);
+    }
+
+    public void revertResist(){
+        SetDamageReceived(player, defaultResist);
+    }
+
+    public void revertSpeed(){
+        SetMoveSpeed(player, defaultSpeed);
+    }
+
+    public void revertHealingRecieved(){
+        SetHealingReceived(player, defaultHealRec);
+    }
+
+    public void revertHealing(){
+        SetHealingDealt(player, defaultHeal);
+    }
+
+    public void revertAbilOne(){
+        SetAbility1Enabled(player, abil1);
+    }
+
+    public void revertAbilTwo(){
+        SetAbility2Enabled(player, abil2);
+    }
+
+    public void revertUlt(){
+        SetUltimateAbilityEnabled(player, ult);
+    }
+
+}
 
 rule: "bans"
 Event.OngoingPlayer
 {
     SetAllowedHeroes(EventPlayer(), [Hero.Moira, Hero.Reinhardt, Hero.Sombra, Hero.Pharah, Hero.Tracer, winton, Hero.Widowmaker, Hero.Ana]);
+    EventPlayer().manager = new generalManager();
 }
 
 
@@ -31,11 +130,22 @@ if (IsHeroBeingPlayed(Hero.Reinhardt, EventPlayer().Team()))
 {
     SetMaxHealth(EventPlayer(), 100);
     RemoveAllHealthPoolsFromPlayer(EventPlayer());
+
+    EventPlayer().manager.defaultHealthScalar = 100*(700/MaxHealth(EventPlayer()));
+    EventPlayer().manager.defaultArmour = 0;
+    EventPlayer().manager.defaultShield = 0;
+    EventPlayer().manager.defaultResist = 100;
+    EventPlayer().manager.defaultDamage = 100;
+    EventPlayer().manager.defaultSpeed = 100;
+    EventPlayer().manager.defaultHeal = 100;
+    EventPlayer().manager.defaultHealRec = 100;
+    EventPlayer().manager.scale = 1;
+    EventPlayer().manager.abil1 = true;
+    EventPlayer().manager.abil2 = true;
+    EventPlayer().manager.ult = true;
     Wait(0.1);
-    SetMaxHealth(EventPlayer(), 100*(699/MaxHealth(EventPlayer())));
-    StartScalingPlayer(EventPlayer(), 1, false);
-    SetAbility1Enabled(EventPlayer(), true);
-    SetAbility2Enabled(EventPlayer(), true);
+    
+    EventPlayer().manager.fullReset();
 }
 
 rule: "reinActives"
@@ -50,8 +160,7 @@ if (IsButtonHeld(EventPlayer(), Button.SecondaryFire))
     
     LoopIf(IsButtonHeld(EventPlayer(), Button.SecondaryFire));
     
-    SetMoveSpeed(EventPlayer(), 100);
-
+    EventPlayer().manager.revertSpeed();
 }
 
 rule: "reinChargeReset"
@@ -73,12 +182,25 @@ rule: "moiraPassives"
 Event.OngoingPlayer
 if (HeroOf(EventPlayer()) == Hero.Moira)
 {
+
     SetMaxHealth(EventPlayer(), 100);
     RemoveAllHealthPoolsFromPlayer(EventPlayer());
+
+    EventPlayer().manager.defaultHealthScalar = 100*(150/MaxHealth(EventPlayer()));
+    EventPlayer().manager.defaultArmour = 0;
+    EventPlayer().manager.defaultShield = 0;
+    EventPlayer().manager.defaultResist = 100;
+    EventPlayer().manager.defaultDamage = 1;
+    EventPlayer().manager.defaultSpeed = 100;
+    EventPlayer().manager.defaultHeal = 100;
+    EventPlayer().manager.defaultHealRec = 100;
+    EventPlayer().manager.scale = 1;
+    EventPlayer().manager.abil1 = true;
+    EventPlayer().manager.abil2 = true;
+    EventPlayer().manager.ult = true;
     Wait(0.1);
-    SetMaxHealth(EventPlayer(), 100*(150/MaxHealth(EventPlayer())));
-    StartScalingPlayer(EventPlayer(), 1, false);
-    SetAbility1Enabled(EventPlayer(), true);
+    
+    EventPlayer().manager.fullReset();
 }
 
 rule: "moiraFadeCooldown"
@@ -96,7 +218,7 @@ if (EventPlayer().IsUsingAbility1())
     WaitUntil(EventPlayer().IsOnGround(), 10);
 
     SetGravity(EventPlayer(), 100);
-    SetMoveSpeed(EventPlayer(), 100);
+    EventPlayer().manager.revertSpeed();
 }
 
 rule: "moiraOrb"
@@ -117,7 +239,7 @@ if (EventPlayer().slowTimer > 0)
     Wait(0.1);
     slowTimer -= 0.1;
     LoopIf(slowTimer > 0.1);
-    SetMoveSpeed(EventPlayer(), 100);
+    EventPlayer().manager.revertSpeed();
     slowTimer = 0;
 
 }
@@ -128,7 +250,8 @@ Event.OnDamageDealt
 if (HeroOf(EventPlayer()) == Hero.Moira)
 if(EventAbility() == Button.Melee)
 {
-    StartDamageOverTime(Victim(), EventPlayer(), 2, 15);
+    Damage(Victim(), EventPlayer(), 3000);
+    StartDamageOverTime(Victim(), EventPlayer(), 2, 1500);
     SetAbilityResource(EventPlayer(), Button.PrimaryFire, AbilityResource(EventPlayer(), Button.PrimaryFire)+5);
 }
 
@@ -138,7 +261,7 @@ if (HeroOf(EventPlayer()) == Hero.Moira)
 if(EventAbility() == Button.SecondaryFire)
 {
     Heal(Victim(), null, EventDamage());
-    Damage(Victim(), EventPlayer(), 20 - (AbilityResource(EventPlayer(), Button.PrimaryFire)/8));
+    Damage(Victim(), EventPlayer(), 2000 - (AbilityResource(EventPlayer(), Button.PrimaryFire)/0.08));
 }
 
 /*
@@ -153,12 +276,33 @@ if (HeroOf(EventPlayer()) == Hero.Sombra)
 {
     SetMaxHealth(EventPlayer(), 100);
     RemoveAllHealthPoolsFromPlayer(EventPlayer());
+
+    EventPlayer().manager.defaultHealthScalar = 100*(25/MaxHealth(EventPlayer()));
+    EventPlayer().manager.defaultArmour = 0;
+    EventPlayer().manager.defaultShield = 50;
+    EventPlayer().manager.defaultResist = 100;
+    EventPlayer().manager.defaultDamage = 1;
+    EventPlayer().manager.defaultSpeed = 100;
+    EventPlayer().manager.defaultHeal = 100;
+    EventPlayer().manager.defaultHealRec = 100;
+    EventPlayer().manager.scale = 0.5;
+    EventPlayer().manager.abil1 = true;
+    EventPlayer().manager.abil2 = true;
+    EventPlayer().manager.ult = true;
+    Wait(0.1);
+    
+    EventPlayer().manager.fullReset();
+
+    /*
+    SetMaxHealth(EventPlayer(), 100);
+    RemoveAllHealthPoolsFromPlayer(EventPlayer());
     Wait(0.1);
     SetMaxHealth(EventPlayer(), 100*(25/MaxHealth(EventPlayer())));
     AddHealthPoolToPlayer(EventPlayer(), HealthType.Shields, 50, true, true);
     StartScalingPlayer(EventPlayer(), 0.5, false);
     SetAbility1Enabled(EventPlayer(), true);
     SetAbility2Enabled(EventPlayer(), true);
+    */
 }
 
 rule: "sombraSneak"

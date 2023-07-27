@@ -40,6 +40,15 @@ Now Grants teammates who walk inside of the bubble an extra 50 Shield health
 
 ```
 
+
+### Sigma Grindset (NOT STARTED)
+
+```
+Prescence of the Gravity King: All enemies within 10m of sigma take 100% more gravity and have a 5dmg/s DOT
+
+
+```
+
 ## DPS
 
 ### Sombra
